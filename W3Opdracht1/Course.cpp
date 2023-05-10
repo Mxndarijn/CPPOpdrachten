@@ -11,10 +11,10 @@ Course::Course(const std::string& courseName, int capacity) {
 }
 
 Course::Course(const Course& course) {
-	numberOfStudents = course.getNumberOfStudents();
+	this->numberOfStudents = course.getNumberOfStudents();
 	this->courseName = course.courseName;
 	this->capacity = course.capacity;
-	//this->students = course.students;
+	
 	this->students = new std::string[this->capacity];
 	for (int i = 0; i < this->capacity; i++) {
 		this->students[i] = course.students[i];
@@ -57,6 +57,8 @@ void Course::dropStudent(const std::string& name) {
 			newNumberOfStudents++;
 		}
 	}
+	delete[] students;
+
 	numberOfStudents = newNumberOfStudents;
 	students = newStudents;
 }
@@ -70,5 +72,9 @@ int Course::getNumberOfStudents() const {
 }
 
 void Course::clear() {
+	delete[] students;
 
+	students = new string[capacity];
+	numberOfStudents = 0;
 }
+

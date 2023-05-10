@@ -1,20 +1,167 @@
-// W3Opdracht2.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
 #include <iostream>
+#include <vector>
+#include <string>
+#include <cctype>
+#include "ImprovedStack.h"
+
+// Split an expression into numbers, operators, and parenthese
+std::vector<std::string> split(const std::string& expression);
+
+// Evaluate an expression and return the result
+int evaluateExpression(const std::string& expression);
+
+// Perform an operation
+void processAnOperator(
+	Stack<int>& operandStack, Stack<char>& operatorStack);
 
 int main()
 {
-    std::cout << "Hello World!\n";
+	std::string expression;
+	std::cout << "Enter an expression: ";
+	std::getline(std::cin, expression);
+
+	std::cout << expression << " = "
+		<< evaluateExpression(expression) << std::endl;
+
+	return 0;
 }
 
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
+std::vector<std::string> split(const std::string& expression)
+{
+	std::vector<std::string> v; // A vector to store split items as strings
+	std::string numberString; // A numeric string
 
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
+	for (unsigned int i = 0; i < expression.length(); i++)
+	{
+		if (isdigit(expression[i]))
+			numberString.append(1, expression[i]); // Append a digit
+		else
+		{
+			if (numberString.size() > 0)
+			{
+				v.push_back(numberString); // Store the numeric string
+				numberString.erase(); // Empty the numeric string
+			}
+
+			if (!isspace(expression[i]))
+			{
+				std::string s;
+				s.append(1, expression[i]);
+				v.push_back(s); // Store an operator and parenthesis
+			}
+		}
+	}
+
+	// Store the last numeric string
+	if (numberString.size() > 0)
+		v.push_back(numberString);
+
+	return v;
+}
+
+// Evaluate an expression 
+int evaluateExpression(const std::string& expression)
+{
+	// Create operandStack to store operands
+	Stack<int> operandStack;
+
+	// Create operatorStack to store operators
+	Stack<char> operatorStack;
+
+	// Extract operands and operators
+	std::vector<std::string> tokens = split(expression);
+
+	// Phase 1: Scan tokens
+	for (unsigned int i = 0; i < tokens.size(); i++)
+	{
+		if (tokens[i][0] == '^')
+		{
+			// Process all *, / in the top of the operator stack
+			while (!operatorStack.empty() && (operatorStack.peek() == '^'))
+			{
+				processAnOperator(operandStack, operatorStack);
+			}
+
+			// Push the ^ operator into the operator stack
+			operatorStack.push(tokens[i][0]);
+		}
+		else if (tokens[i][0] == '+' || tokens[i][0] == '-')
+		{
+			// Process all +, -, *, / in the top of the operator stack
+			while (!operatorStack.empty() && (operatorStack.peek() == '+'
+				|| operatorStack.peek() == '-' || operatorStack.peek() == '*'
+				|| operatorStack.peek() == '/'
+				|| operatorStack.peek() == '^'
+				|| operatorStack.peek() == '%'))
+			{
+				processAnOperator(operandStack, operatorStack);
+			}
+
+			// Push the + or - operator into the operator stack
+			operatorStack.push(tokens[i][0]);
+		}
+		else if (tokens[i][0] == '*' || tokens[i][0] == '/' || tokens[i][0] == '%')
+		{
+			// Process all *, / in the top of the operator stack
+			while (!operatorStack.empty() && (operatorStack.peek() == '*'
+				|| operatorStack.peek() == '/'
+				|| operandStack.peek() == '%'
+				|| operandStack.peek() == '^'))
+			{
+				processAnOperator(operandStack, operatorStack);
+			}
+
+			// Push the * or / operator into the operator stack
+			operatorStack.push(tokens[i][0]);
+		}
+		else if (tokens[i][0] == '(')
+		{
+			operatorStack.push('('); // Push '(' to stack
+		}
+		else if (tokens[i][0] == ')')
+		{
+			// Process all the operators in the stack until seeing '('
+			while (operatorStack.peek() != '(')
+			{
+				processAnOperator(operandStack, operatorStack);
+			}
+
+			operatorStack.pop(); // Pop the '(' symbol from the stack
+		}
+		else
+		{ // An operand scanned. Push an operand to the stack as integer
+			operandStack.push(atoi(tokens[i].c_str()));
+		}
+	}
+
+	// Phase 2: process all the remaining operators in the stack
+	while (!operatorStack.empty())
+	{
+		processAnOperator(operandStack, operatorStack);
+	}
+
+	// Return the result
+	return operandStack.pop();
+}
+
+// Process one opeator: Take an operator from operatorStack and 
+// apply it on the operands in the operandStack 
+void processAnOperator(
+	Stack<int>& operandStack, Stack<char>& operatorStack)
+{
+	char op = operatorStack.pop();
+	int op1 = operandStack.pop();
+	int op2 = operandStack.pop();
+	if (op == '+')
+		operandStack.push(op2 + op1);
+	else if (op == '-')
+		operandStack.push(op2 - op1);
+	else if (op == '*')
+		operandStack.push(op2 * op1);
+	else if (op == '/')
+		operandStack.push(op2 / op1);
+	else if (op == '^')
+		operandStack.push(pow(op2, op1));
+	else if (op == '%')
+		operandStack.push(op2 % op1);
+}
