@@ -9,7 +9,6 @@ int main() {
     cin >> fileName;
 
     ifstream input_file(fileName);
-    ofstream output_file(fileName, ios_base::app);
 
     if (!input_file) {
         cout << "Error: file does not exist." << endl;
